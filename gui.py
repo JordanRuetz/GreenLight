@@ -1,12 +1,14 @@
+""" Classes for intersections.
+
+"""
+
 import math
-import sys
-from typing import Tuple, List, Dict, Optional
-
+import random
+from typing import Tuple, List
 import pygame
-
 from car import Car
 from rail import Rail
-
+from intersection import Intersection, distance
 
 FPS = 20
 
@@ -18,23 +20,36 @@ Lane = Tuple[int, int, str]
 
 
 class IntersectionView:
+    """ Class that models a general intersection.
+
+    """
+
     BACK_COLOUR = 0x2e, 0x7d, 0x32
     BORDER_COLOUR = 0, 0, 0
     ASPHALT_COLOUR = 0xcc, 0xcc, 0xcc
     LANE_WIDTH = 50
     BORDER_WIDTH = 5
 
-    def __init__(self, *,
-                 intersection,
-                 window_size: Tuple[int, int],
-                 x_lanes: int,
-                 y_lanes: int) -> None:
+    def __init__(self, intersection, window_size, x_lanes, y_lanes):
+        """ Intersection initializer.
+
+        :param intersection: the intersection
+        :type intersection:
+        :param window_size: height and width of window
+        :type window_size: Tuple[int, int]
+        :param x_lanes: number of horizontal lanes
+        :type x_lanes: int
+        :param y_lanes: number of vertical lanes
+        :type y_lanes: int
+        """
+
         self.intersection = intersection
         self.width, self.height = window_size
         self.x_lanes = x_lanes
         self.y_lanes = y_lanes
         self.time = 0
-        self.lastx = self.lasty = 0
+        self.lastx = 0
+        self.lasty = 0
 
         pygame.init()
         self.screen = pygame.display.set_mode(window_size)
@@ -43,9 +58,16 @@ class IntersectionView:
 
         self.quitting = False
 
-    def draw_intersection(self, x_lanes: int, y_lanes: int):
-        x_lines = x_lanes + 1
-        y_lines = y_lanes + 1
+    def draw_intersection(self, x_lanes, y_lanes):
+        """ Draw the intersection onto the screen
+
+        :param x_lanes: number of horizontal lanes
+        :type x_lanes: int
+        :param y_lanes: number of vertical lanes
+        :type y_lanes: int
+        """
+
+        # how big the intersection middle rectangle needs to be, center position, bounds
         centre_rect_width = y_lanes * self.LANE_WIDTH
         centre_rect_height = x_lanes * self.LANE_WIDTH
         centre_x = self.width / 2
@@ -71,172 +93,35 @@ class IntersectionView:
 
         # lines
         # horizontal
-        if x_lines % 2 != 0:
-            # left side
-            # centre line
-            pygame.draw.line(self.screen,                    # display
-                             self.BORDER_COLOUR,             # colour
-                             (0, centre_y),                  # startpos
-                             (centre_left_bound, centre_y),  # endpos
-                             self.BORDER_WIDTH)              # width
-            # lines above
-            for above_index in range(1, x_lines // 2 + 1):
-                y = centre_y + above_index * self.LANE_WIDTH
-                pygame.draw.line(self.screen,                 # display
-                                 self.BORDER_COLOUR,          # colour
-                                 (0, y),                      # startpos
-                                 (centre_left_bound, y),      # endpos
-                                 self.BORDER_WIDTH)           # width
-            # lines below
-            for below_index in range(1, x_lines // 2 + 1):
-                y = centre_y - below_index * self.LANE_WIDTH
-                pygame.draw.line(self.screen,                 # display
-                                 self.BORDER_COLOUR,          # colour
-                                 (0, y),                      # startpos
-                                 (centre_left_bound, y),      # endpos
-                                 self.BORDER_WIDTH)           # width
-            # right side
-            # centre line
-            pygame.draw.line(self.screen,                     # display
-                             self.BORDER_COLOUR,              # colour
-                             (self.width, centre_y),          # startpos
-                             (centre_right_bound, centre_y),  # endpos
-                             self.BORDER_WIDTH)               # width
-            # lines above
-            for above_index in range(1, x_lines // 2 + 1):
-                y = centre_y + above_index * self.LANE_WIDTH
-                pygame.draw.line(self.screen,                 # display
-                                 self.BORDER_COLOUR,          # colour
-                                 (self.width, y),             # startpos
-                                 (centre_right_bound, y),     # endpos
-                                 self.BORDER_WIDTH)           # width
-            # lines below
-            for below_index in range(1, x_lines // 2 + 1):
-                y = centre_y - below_index * self.LANE_WIDTH
-                pygame.draw.line(self.screen,                 # display
-                                 self.BORDER_COLOUR,          # colour
-                                 (self.width, y),             # startpos
-                                 (centre_right_bound, y),     # endpos
-                                 self.BORDER_WIDTH)           # width
-        else:
-            # left side
-            # lines above
-            for above_index in range(x_lines // 2):
-                y = centre_y + self.LANE_WIDTH/2 + above_index*self.LANE_WIDTH
-                pygame.draw.line(self.screen,                 # display
-                                 self.BORDER_COLOUR,          # colour
-                                 (0, y),                      # startpos
-                                 (centre_left_bound, y),      # endpos
-                                 self.BORDER_WIDTH)           # width
-            # lines below
-            for below_index in range(x_lines // 2):
-                y = centre_y - self.LANE_WIDTH/2 - below_index*self.LANE_WIDTH
-                pygame.draw.line(self.screen,                 # display
-                                 self.BORDER_COLOUR,          # colour
-                                 (0, y),                      # startpos
-                                 (centre_left_bound, y),      # endpos
-                                 self.BORDER_WIDTH)           # width
-            # right side
-            # lines above
-            for above_index in range(x_lines // 2):
-                y = centre_y + self.LANE_WIDTH/2 + above_index*self.LANE_WIDTH
-                pygame.draw.line(self.screen,                 # display
-                                 self.BORDER_COLOUR,          # colour
-                                 (self.width, y),             # startpos
-                                 (centre_right_bound, y),     # endpos
-                                 self.BORDER_WIDTH)           # width
-            # lines below
-            for below_index in range(x_lines // 2):
-                y = centre_y - self.LANE_WIDTH/2 - below_index*self.LANE_WIDTH
-                pygame.draw.line(self.screen,                 # display
-                                 self.BORDER_COLOUR,          # colour
-                                 (self.width, y),             # startpos
-                                 (centre_right_bound, y),     # endpos
-                                 self.BORDER_WIDTH)           # width
+        for idx in range(0, x_lanes + 1):
+            y_val = centre_top_bound + idx * self.LANE_WIDTH
 
-        # vertical
-        if y_lines % 2 != 0:
-            # top side
-            # centre line
-            pygame.draw.line(self.screen,                    # display
-                             self.BORDER_COLOUR,             # colour
-                             (centre_x, 0),                  # startpos
-                             (centre_x, centre_top_bound),   # endpos
-                             self.BORDER_WIDTH)              # width
-            # lines above
-            for above_index in range(1, y_lines // 2 + 1):
-                x = centre_x + above_index * self.LANE_WIDTH
-                pygame.draw.line(self.screen,                 # display
-                                 self.BORDER_COLOUR,          # colour
-                                 (x, 0),                      # startpos
-                                 (x, centre_top_bound),       # endpos
-                                 self.BORDER_WIDTH)           # width
-            # lines below
-            for below_index in range(1, y_lines // 2 + 1):
-                x = centre_x - below_index * self.LANE_WIDTH
-                pygame.draw.line(self.screen,                 # display
-                                 self.BORDER_COLOUR,          # colour
-                                 (x, 0),                      # startpos
-                                 (x, centre_top_bound),       # endpos
-                                 self.BORDER_WIDTH)           # width
-            # right side
-            # centre line
-            pygame.draw.line(self.screen,                     # display
-                             self.BORDER_COLOUR,              # colour
-                             (centre_x, self.height),         # startpos
-                             (centre_x, centre_bottom_bound),  # endpos
-                             self.BORDER_WIDTH)               # width
-            # lines above
-            for above_index in range(1, y_lines // 2 + 1):
-                x = centre_x + above_index * self.LANE_WIDTH
-                pygame.draw.line(self.screen,                 # display
-                                 self.BORDER_COLOUR,          # colour
-                                 (x, self.height),            # startpos
-                                 (x, centre_bottom_bound),    # endpos
-                                 self.BORDER_WIDTH)           # width
-            # lines below
-            for below_index in range(1, y_lines // 2 + 1):
-                x = centre_x - below_index * self.LANE_WIDTH
-                pygame.draw.line(self.screen,                 # display
-                                 self.BORDER_COLOUR,          # colour
-                                 (x, self.height),            # startpos
-                                 (x, centre_bottom_bound),    # endpos
-                                 self.BORDER_WIDTH)           # width
-        else:
-            # left side
-            # lines above
-            for above_index in range(y_lines // 2):
-                x = centre_x + self.LANE_WIDTH/2 + above_index*self.LANE_WIDTH
-                pygame.draw.line(self.screen,                 # display
-                                 self.BORDER_COLOUR,          # colour
-                                 (x, 0),                      # startpos
-                                 (x, centre_top_bound),       # endpos
-                                 self.BORDER_WIDTH)           # width
-            # lines below
-            for below_index in range(y_lines // 2):
-                x = centre_x - self.LANE_WIDTH/2 - below_index*self.LANE_WIDTH
-                pygame.draw.line(self.screen,                 # display
-                                 self.BORDER_COLOUR,          # colour
-                                 (x, 0),                      # startpos
-                                 (x, centre_top_bound),       # endpos
-                                 self.BORDER_WIDTH)           # width
-            # right side
-            # lines above
-            for above_index in range(y_lines // 2):
-                x = centre_x + self.LANE_WIDTH/2 + above_index*self.LANE_WIDTH
-                pygame.draw.line(self.screen,                 # display
-                                 self.BORDER_COLOUR,          # colour
-                                 (x, self.height),            # startpos
-                                 (x, centre_bottom_bound),    # endpos
-                                 self.BORDER_WIDTH)           # width
-            # lines below
-            for below_index in range(y_lines // 2):
-                x = centre_x - self.LANE_WIDTH/2 - below_index*self.LANE_WIDTH
-                pygame.draw.line(self.screen,                 # display
-                                 self.BORDER_COLOUR,          # colour
-                                 (x, self.height),            # startpos
-                                 (x, centre_bottom_bound),    # endpos
-                                 self.BORDER_WIDTH)           # width
+            pygame.draw.line(self.screen,
+                             self.BORDER_COLOUR,
+                             (0, y_val),
+                             (centre_left_bound, y_val),
+                             self.BORDER_WIDTH)
+
+            pygame.draw.line(self.screen,
+                             self.BORDER_COLOUR,
+                             (self.width, y_val),
+                             (centre_right_bound, y_val),
+                             self.BORDER_WIDTH)
+
+        for idx in range(0, y_lanes + 1):
+            x_val = centre_left_bound + idx * self.LANE_WIDTH
+
+            pygame.draw.line(self.screen,  # display
+                             self.BORDER_COLOUR,  # colour
+                             (x_val, 0),  # startpos
+                             (x_val, centre_top_bound),  # endpos
+                             self.BORDER_WIDTH)
+
+            pygame.draw.line(self.screen,  # display
+                             self.BORDER_COLOUR,  # colour
+                             (x_val, self.height),  # startpos
+                             (x_val, centre_bottom_bound),  # endpos
+                             self.BORDER_WIDTH)
 
         # corners
         # top left
@@ -264,12 +149,11 @@ class IntersectionView:
                                                self.BORDER_WIDTH)
         self.screen.fill(self.BORDER_COLOUR, bottom_right_corner)
 
-    def handle_event(self, event):
-        if event.type == pygame.QUIT:
-            # User clicked the close button
-            self.quitting = True
-
     def do_updates(self):
+        """ Method to redraw the intersection with changed values.
+
+        """
+
         # Background colour
         self.screen.fill(self.BACK_COLOUR)
 
@@ -277,15 +161,20 @@ class IntersectionView:
         self.draw_intersection(self.x_lanes, self.y_lanes)
 
     def tick(self):
+        """ Method to tick one time
+
+        :return:
+        :rtype: bool
+        """
         # delay
         self.clock.tick(FPS)
 
         self.do_updates()
 
         # Respond to events
-        quit = False
         for event in pygame.event.get():
-            self.handle_event(event)
+            if event.type == pygame.QUIT:
+                self.quitting = True
 
         # Update display
         pygame.display.flip()
@@ -296,7 +185,11 @@ class IntersectionView:
 
 
 class ZipperView(IntersectionView):
+    """ An intersection given the cars.
+
+    """
     def __init__(self, **kwargs):
+        # should be intersection, window size, x lanes, y lanes
         super().__init__(**kwargs)
         pygame.display.set_caption("Traffic Zipper")
 
@@ -304,9 +197,17 @@ class ZipperView(IntersectionView):
         self.car_rect = self.car_img.get_rect()
         pygame.display.set_icon(self.car_img)
 
-        self.car_last_positions: Dict[Car, Tuple[int, int]] = {}
+        # Dict[Car, Tuple[int, int]]
+        self.car_last_positions = {}
 
-    def draw_cars(self, cars: List[Car], time: int):
+    def draw_cars(self, cars, time):
+        """ Draws the cars on the screen.
+
+        :param cars: the cars
+        :type cars: List[Car]
+        :param time: the time
+        :type time: int
+        """
         for car in cars:
             rail = car.rail
             scalar = car.get_pos(time)
@@ -373,8 +274,11 @@ class SetupView(IntersectionView):
         # 1 - place car end position
         self.mode = 0
 
-        self.cars: List[Car] = []
-        self.lane_cars: Dict[Lane, List[Car]] = {}
+        # List[Car]
+        self.cars = []
+
+        #Dict[Lane, List[Car]]
+        self.lane_cars = {}
         self.car_hint_showing = False
         self.rail_hint_showing = False
 
@@ -396,7 +300,8 @@ class SetupView(IntersectionView):
         self.centre_top_bound = self.centre_y - centre_rect_height / 2
         self.centre_bottom_bound = self.centre_y + centre_rect_height / 2
 
-        self.current_rail: Optional[Rail] = None
+        # Optional[Rail]
+        self.current_rail = None
 
         self.font = pygame.font.SysFont("Segoe UI", 72)
 

@@ -1,19 +1,36 @@
-from typing import Callable
+""" Contains classes that represent the paths that cars follow going in one lane and out another.
+
+"""
+
 import math
+from abc import ABC, abstractmethod
 
 
-class Rail:
+class Rail(ABC):
+    """ An abstract class representing the path that a car follows from going in one lane to out another.
+
+    """
     name = "Rail"
 
-    def __init__(self, fun: Callable, distance):
-        self.fun = fun
+    def __init__(self, distance):
         self.total_distance = distance
 
-    def get(self, position: float):
-        return self.fun(position)
+    @abstractmethod
+    def get(self, scalar):
+        """
+
+        :param scalar:
+        :type scalar:
+        :return:
+        :rtype:
+        """
+        pass
 
 
 class LeftRail(Rail):
+    """ A path that a car turning left follows.
+
+    """
     name = "LeftRail"
 
     def __init__(self, transform):
@@ -34,6 +51,13 @@ class LeftRail(Rail):
         return x, y
 
     def get(self, scalar):
+        """ x, y coordinates of a car scalar amount along the rail
+
+        :param scalar: scalar distance car is along the rail
+        :type scalar: int
+        :return: x, y coordinates
+        :rtype: (int, int)
+        """
         if scalar in self.cache:
             return self.cache[scalar]
         if scalar < self.cutoffs[0]:

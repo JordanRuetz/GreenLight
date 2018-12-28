@@ -25,6 +25,10 @@ class Intersection:
         self.collisions_dict = {}
         self.init_collisions_dict()
 
+        self.last_cars = {}
+        for rail in self.rails:
+            self.last_cars[rail] = None
+
     def init_collisions_dict(self):
         """
         Initializes the dictionary of collision points between
@@ -50,20 +54,20 @@ class Intersection:
                             self.collisions_dict[rail_a][rail_b].append(a)
                             self.collisions_dict[rail_b][rail_a].append(b)
 
-    def split(self, cars):
-        """
+    def add_car(self, car):
+        """ Adds a car to the intersection.
 
-        :param cars:
-        :type cars:
-        :return:
-        :rtype:
+        :param car: the car to add to the intersection
+        :type car: Car
         """
-        for car in cars:
-            for rail_b, collisions in self.collisions_dict[car.rail].items():
-                if collisions is not None:
-                    for collision in collisions:
-                        car.accells.append((collision, 0.1))
-            car.accells.sort(key=lambda x: x[0])
+        # initialize accells of car to default values
+        for rail_b, collisions in self.collisions_dict[car.rail].items():
+            if collisions is not None:
+                for collision in collisions:
+                    car.accells.append((collision, 0.1))
+        car.accells.sort(key=lambda x: x[0])
+
+        self.cars.append(car)
 
     def firstCollision(self, cars):
         """ Finds the first collision that a newly added car will encounter.
@@ -101,14 +105,7 @@ class Intersection:
         queue = [self.cars]
         while len(queue) > 0:
             cars = queue.pop(0)
-            #print("C", cars)
-            # i = Intersection(cars, self.rails, False)
-            # real_actual_view = ZipperView(intersection=i,
-            #                               window_size=(800, 600),
-            #                               x_lanes=2,
-            #                               y_lanes=2)
-            # while not real_actual_view.quitting:
-            #     real_actual_view.tick()
+
             res = self.firstCollision(cars)
             if res is None:
                 self.cars = cars

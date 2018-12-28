@@ -1,3 +1,7 @@
+""" A car class to represent each car on the road.
+
+"""
+
 import math
 from rail import Rail
 
@@ -5,6 +9,9 @@ max_acceleration = 1
 
 
 class Car:
+    """ Represents one vehicle on the road.
+
+    """
     def __init__(self, start_speed: float, rail: Rail, name, start_time=0, accells=None):
         self.start_speed = start_speed
         self.rail = rail
@@ -13,7 +20,7 @@ class Car:
         # and the acceleration of the car during that interval.
         self.accells = accells or [(self.rail.total_distance, 0.1)]
         self.accellsI = 0
-        self.radius = 25   # TODO:  Change this if necessary
+        self.radius = 25
         self.start_time = start_time
 
     def get_location(self, time):
@@ -29,7 +36,7 @@ class Car:
         This returns a bunch of internal information about the *start of the acceleration range the car is in at a given
         time*.
         This does *not* account for the car's position within the acceleration range.
-        It returns: 
+        It returns:
             the index of the range (or None if the car has passed out of all ranges, in which case it is assumed to have
                 zero acceleration)
             the distance covered by the range
@@ -79,14 +86,14 @@ class Car:
 
     def get_time(self):
         """
-        This function returns the time at which the car has completed all of its acceleration ranges, and is 
+        This function returns the time at which the car has completed all of its acceleration ranges, and is
         assumed to be cruising at a constant velocity after leaving the intersection.
         """
         time = self.start_time
         speed = self.start_speed
-        oldD = 0
+        old_dist = 0
         for d, a in self.accells:
-            d -= oldD
+            d -= old_dist
             v2 = math.sqrt(speed**2 + 2 * a * d)
             t = 2 * d / (speed + v2)
             time += t
